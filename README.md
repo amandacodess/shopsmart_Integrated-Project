@@ -67,11 +67,6 @@ shopsmart/
 │── templates/
 │   ├── index.html          # User interface (shopping page)
 │   └── main.html           # Admin dashboard
-
-│── static/
-│   ├── style.css           # Styling (UI theme)
-│   ├── script.js           # Frontend logic & API calls
-│   └── (assets if any)     # Images / additional files
 ```
 
 
