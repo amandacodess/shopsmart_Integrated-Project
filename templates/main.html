@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShopSmart Admin — Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#c5f0fe;           /* light blue background */
+  --surface:#ffffff;      /* main sections */
+  --card:#f5faff;         /* soft card background */
+  --border:#d6e6f5;       /* light border */
+
+  --accent:#4a90e2;       /* primary blue */
+  --accent2:#2c5aa0;      /* deep navy */
+  --accent3:#6fb1ff;      /* lighter blue highlight */
+  --accent4:#a8d0ff;      /* subtle pastel blue */
+
+  --text:#0b2545;         /* navy text */
+  --muted:#5f7a99;        /* muted navy */
+
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+
+  --sidebar:240px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);display:flex;min-height:100vh}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);min-height:100vh;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:50;
+}
+.logo{
+  padding:24px 20px;
+  font-family:var(--font-display);font-weight:800;font-size:1.15rem;
+  color:var(--accent);letter-spacing:-.3px;border-bottom:1px solid var(--border);
+}
+.logo span{color:var(--muted);font-weight:400;font-size:.65rem;display:block;margin-top:2px;letter-spacing:.12em;text-transform:uppercase}
+.nav{padding:20px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+.nav-item{
+  padding:10px 12px;border-radius:10px;
+  font-size:.85rem;color:var(--muted);cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;gap:10px;border:none;background:transparent;width:100%;text-align:left;
+}
+.nav-item:hover,.nav-item.active{background:var(--card);color:var(--text)}
+.nav-item.active{color:var(--accent)}
+.nav-icon{font-size:1rem;width:18px;text-align:center}
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid var(--border);
+  font-size:.75rem;color:var(--muted);
+}
+.back-btn{
+  display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;
+  font-size:.8rem;padding:8px 12px;border-radius:8px;transition:color .2s;margin-top:8px;
+}
+.back-btn:hover{color:var(--accent)}
+
+/* ── MAIN CONTENT ── */
+.main{margin-left:var(--sidebar);flex:1;padding:32px}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:32px;flex-wrap:wrap;gap:16px;
+}
+.page-title{font-family:var(--font-display);font-weight:800;font-size:1.6rem}
+.page-title span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--accent);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.4)}50%{box-shadow:0 0 0 6px rgba(0,229,160,0)}}
+.status-label{font-size:.8rem;color:var(--muted)}
+.timestamp{font-family:var(--font-mono);font-size:.75rem;color:var(--muted)}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px;position:relative;overflow:hidden;transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--accent)}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent-color,var(--accent));
+}
+.stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.stat-value{font-family:var(--font-display);font-weight:800;font-size:2rem;line-height:1;margin-bottom:4px}
+.stat-sub{font-size:.78rem;color:var(--muted)}
+.stat-icon{position:absolute;top:16px;right:16px;font-size:1.4rem;opacity:.4}
+
+/* ── CHARTS GRID ── */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;margin-bottom:28px}
+.chart-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;
+}
+.chart-card.full{grid-column:1/-1}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.chart-title{font-family:var(--font-display);font-weight:700;font-size:1rem}
+.chart-badge{
+  font-size:.7rem;font-weight:600;padding:4px 10px;border-radius:20px;
+  background:rgba(0,229,160,.12);color:var(--accent);
+}
+.chart-wrap{position:relative;height:260px}
+
+/* ── TOP PRODUCTS TABLE ── */
+.table-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px;
+}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{
+  font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+  padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);
+}
+td{padding:12px 12px;border-bottom:1px solid rgba(33,36,47,.6);font-size:.875rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.rank{font-family:var(--font-mono);font-size:.75rem;color:var(--muted);width:30px}
+.product-thumb{
+  width:36px;height:36px;border-radius:8px;object-fit:cover;
+  background:var(--surface);vertical-align:middle;margin-right:10px;
+}
+.product-thumb-emoji{
+  width:36px;height:36px;border-radius:8px;background:var(--surface);
+  display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;
+  vertical-align:middle;margin-right:10px;
+}
+.rating-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(255,209,102,.12);color:var(--accent4);
+  padding:3px 8px;border-radius:8px;font-size:.75rem;font-weight:600;
+}
+.cat-pill{
+  display:inline-flex;
+  background:rgba(124,92,252,.1);color:var(--accent2);
+  padding:3px 8px;border-radius:8px;font-size:.72rem;
+}
+
+/* ── INSIGHTS ── */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px}
+.insight-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.insight-icon{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+}
+.insight-title{font-weight:600;font-size:.9rem;margin-bottom:4px}
+.insight-body{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+/* ── DSA INFO ── */
+.dsa-section{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px;
+}
+.dsa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.dsa-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
+}
+.dsa-tag{
+  font-family:var(--font-mono);font-size:.7rem;font-weight:500;
+  padding:3px 8px;border-radius:6px;margin-bottom:10px;display:inline-block;
+}
+.dsa-name{font-weight:700;font-size:.95rem;margin-bottom:6px}
+.dsa-desc{font-size:.8rem;color:var(--muted);line-height:1.5}
+.complexity{
+  font-family:var(--font-mono);font-size:.8rem;
+  background:rgba(0,229,160,.08);color:var(--accent);
+  padding:2px 8px;border-radius:4px;display:inline-block;margin-top:8px;
+}
+
+/* ── LOADER ── */
+.loader-text{text-align:center;padding:40px;color:var(--muted)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:20px}
+  .charts-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    ShopSmart
+    <span>Admin Dashboard</span>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" onclick="scrollTo('overview')"><span class="nav-icon">📊</span>Overview</button>
+    <button class="nav-item" onclick="scrollTo('charts')"><span class="nav-icon">📈</span>Charts</button>
+    <button class="nav-item" onclick="scrollTo('top-products')"><span class="nav-icon">🏆</span>Top Products</button>
+    <button class="nav-item" onclick="scrollTo('insights')"><span class="nav-icon">💡</span>Insights</button>
+    <button class="nav-item" onclick="scrollTo('dsa')"><span class="nav-icon">⚡</span>DSA Info</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div>Smart E-Commerce v1.0</div>
+    <a href="/" class="back-btn">← Back to Store</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="page-title">Analytics <span>Dashboard</span></div>
+    <div class="topbar-right">
+      <div class="status-dot"></div>
+      <span class="status-label">Live</span>
+      <span class="timestamp" id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- SUMMARY STATS -->
+  <div id="overview" class="stats-row">
+    <div class="stat-card" style="--accent-color:var(--accent)">
+      <div class="stat-icon">📦</div>
+      <div class="stat-label">Total Products</div>
+      <div class="stat-value" id="statProducts">—</div>
+      <div class="stat-sub">In catalog</div>
+    </div>
+    <div class="stat-card" style="--accent-color:var(--accent2)">
+      <div class="stat-icon">🗂</div>
+      <div class="stat-label">Categories</div>
+      <div class="stat-value" id="statCategories">—</div>
+      <div class="stat-sub">Product types</div>
+    </div>
+    <div class="stat-card" style="--accent-color:var(--accent4)">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-label">Avg Rating</div>
+      <div class="stat-value" id="statRating">—</div>
+      <div class="stat-sub">Across all products</div>
+    </div>
+    <div class="stat-card" style="--accent-color:var(--accent3)">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-label">Top Category</div>
+      <div class="stat-value" style="font-size:1.1rem;padding-top:6px" id="statTopCat">—</div>
+      <div class="stat-sub">Most products</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div id="charts" class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Category Distribution</div>
+        <div class="chart-badge">Top 10</div>
+      </div>
+      <div class="chart-wrap"><canvas id="catBarChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Category Share</div>
+        <div class="chart-badge">Pie View</div>
+      </div>
+      <div class="chart-wrap"><canvas id="catPieChart"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <div class="chart-header">
+        <div class="chart-title">Price Distribution</div>
+        <div class="chart-badge">Histogram</div>
+      </div>
+      <div class="chart-wrap"><canvas id="priceHistChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TOP PRODUCTS TABLE -->
+  <div id="top-products" class="table-card">
+    <div class="table-header">
+      <div class="chart-title">🏆 Top Rated Products</div>
+      <div class="chart-badge">Best Performance</div>
+    </div>
+    <div id="topTable"><div class="loader-text">Loading…</div></div>
+  </div>
+
+  <!-- BUSINESS INSIGHTS -->
+  <div id="insights" class="insights-grid">
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(0,229,160,.1)">📱</div>
+      <div>
+        <div class="insight-title">Electronics Leads Demand</div>
+        <div class="insight-body">Electronics & gadgets consistently show the highest listing count and review volume, indicating strong consumer interest in tech products.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(255,209,102,.1)">⭐</div>
+      <div>
+        <div class="insight-title">High Ratings Drive Sales</div>
+        <div class="insight-body">Products with a rating above 4.0 attract significantly more reviews, suggesting better perceived value and repeat purchase behavior.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(124,92,252,.1)">💰</div>
+      <div>
+        <div class="insight-title">Mid-Range Sweet Spot</div>
+        <div class="insight-body">Products priced ₹500–₹2,000 have the highest volume of ratings, confirming that mid-range pricing appeals to the broadest buyer segment.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(255,107,107,.1)">🎯</div>
+      <div>
+        <div class="insight-title">Discount Strategy Works</div>
+        <div class="insight-body">Items with 20–40% discounts off MRP tend to have more engagement, while extreme discounts (>60%) can signal quality concerns.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(0,229,160,.1)">📦</div>
+      <div>
+        <div class="insight-title">Category Diversity</div>
+        <div class="insight-body">A balanced catalog spanning electronics, fashion, home goods, and groceries reduces dependency on any single category's performance cycle.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon" style="background:rgba(255,209,102,.1)">🤖</div>
+      <div>
+        <div class="insight-title">AI Boosts Discovery</div>
+        <div class="insight-body">The TF-IDF recommendation engine surfaces relevant cross-category products, increasing basket size through intelligent content-based filtering.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DSA SECTION -->
+  <div id="dsa" class="dsa-section">
+    <div class="chart-title">⚡ DSA Implementation Details</div>
+    <div class="dsa-grid">
+      <div class="dsa-card">
+        <div class="dsa-tag" style="background:rgba(0,229,160,.1);color:var(--accent)">Hashing</div>
+        <div class="dsa-name">Product Hash Map</div>
+        <div class="dsa-desc">Every product is stored in a Python dictionary keyed by product ID. Lookup by ID is O(1) on average using open-addressing with collision chaining.</div>
+        <div class="complexity">Avg Lookup: O(1)</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-tag" style="background:rgba(124,92,252,.1);color:var(--accent2)">Searching</div>
+        <div class="dsa-name">Linear + Binary Search</div>
+        <div class="dsa-desc">Linear search scans the full product list by substring match. Binary search operates on a pre-sorted list to find products by exact rating in O(log n).</div>
+        <div class="complexity">Linear: O(n) · Binary: O(log n)</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-tag" style="background:rgba(255,209,102,.1);color:var(--accent4)">Sorting</div>
+        <div class="dsa-name">Timsort (Python .sort)</div>
+        <div class="dsa-desc">Products are dynamically sorted by rating, price, or popularity using Python's built-in Timsort — a hybrid merge/insertion sort optimised for real-world data.</div>
+        <div class="complexity">O(n log n)</div>
+      </div>
+      <div class="dsa-card">
+        <div class="dsa-tag" style="background:rgba(255,107,107,.1);color:var(--accent3)">ML</div>
+        <div class="dsa-name">TF-IDF + Cosine Similarity</div>
+        <div class="dsa-desc">Product names and categories are vectorised via TF-IDF. Cosine similarity between vectors identifies the closest content matches for recommendations.</div>
+        <div class="complexity">Build: O(n·d) · Query: O(n)</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+/* ────────────────────────────────────────
+   CLOCK
+──────────────────────────────────────── */
+function tick(){
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+tick(); setInterval(tick,1000);
+
+function scrollTo(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}) }
+
+/* ────────────────────────────────────────
+   CHART DEFAULTS
+──────────────────────────────────────── */
+Chart.defaults.color = '#5a5f7a';
+Chart.defaults.borderColor = '#21242f';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+const PALETTE = ['#00e5a0','#7c5cfc','#ffd166','#ff6b6b','#06d6a0','#118ab2','#ef476f','#f78c6b','#a8dadc','#457b9d'];
+
+/* ────────────────────────────────────────
+   BOOT
+──────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadSummary(), loadCategoryCharts(), loadPriceChart(), loadTopProducts()]);
+});
+
+/* ────────────────────────────────────────
+   SUMMARY STATS
+──────────────────────────────────────── */
+async function loadSummary() {
+  try {
+    const res = await fetch('/api/analytics/summary');
+    const d = await res.json();
+    document.getElementById('statProducts').textContent = d.total_products.toLocaleString();
+    document.getElementById('statCategories').textContent = d.total_categories;
+    document.getElementById('statRating').textContent = d.avg_rating.toFixed(1);
+    document.getElementById('statTopCat').textContent = d.top_category;
+  } catch(e) {}
+}
+
+/* ────────────────────────────────────────
+   CATEGORY BAR + PIE
+──────────────────────────────────────── */
+async function loadCategoryCharts() {
+  try {
+    const res = await fetch('/api/analytics/categories');
+    const data = await res.json();
+    const labels = data.map(d => d.category);
+    const counts = data.map(d => d.count);
+
+    // Bar Chart
+    new Chart(document.getElementById('catBarChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Products',
+          data: counts,
+          backgroundColor: PALETTE,
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: { grid: { color: '#21242f' } }
+        }
+      }
+    });
+
+    // Pie Chart
+    new Chart(document.getElementById('catPieChart'), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: PALETTE,
+          borderWidth: 2,
+          borderColor: '#161820',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '55%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { font: { size: 11 }, padding: 12, boxWidth: 12 }
+          }
+        }
+      }
+    });
+  } catch(e) {}
+}
+
+/* ────────────────────────────────────────
+   PRICE HISTOGRAM
+──────────────────────────────────────── */
+async function loadPriceChart() {
+  try {
+    const res = await fetch('/api/analytics/price-distribution');
+    const data = await res.json();
+    const labels = data.map(d => d.range);
+    const counts = data.map(d => d.count);
+
+    new Chart(document.getElementById('priceHistChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Products',
+          data: counts,
+          backgroundColor: 'rgba(124,92,252,.7)',
+          borderColor: 'rgba(124,92,252,1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, title: { display: true, text: 'Price Range (₹)', color: '#5a5f7a' } },
+          y: { grid: { color: '#21242f' }, title: { display: true, text: 'Number of Products', color: '#5a5f7a' } }
+        }
+      }
+    });
+  } catch(e) {}
+}
+
+/* ────────────────────────────────────────
+   TOP PRODUCTS TABLE
+──────────────────────────────────────── */
+async function loadTopProducts() {
+  try {
+    const res = await fetch('/api/analytics/top-rated');
+    const data = await res.json();
+    const wrap = document.getElementById('topTable');
+    if (!data.length) { wrap.innerHTML = '<div class="loader-text">No data</div>'; return; }
+    const rows = data.map((p,i) => {
+      const emoji = catEmoji(p.category);
+      const img = p.image && p.image.startsWith('http')
+        ? `<img src="${esc(p.image)}" class="product-thumb" onerror="this.outerHTML='<span class=product-thumb-emoji>${emoji}</span>'">`
+        : `<span class="product-thumb-emoji">${emoji}</span>`;
+      return `<tr>
+        <td class="rank">#${i+1}</td>
+        <td>${img}${esc(p.name)}</td>
+        <td><span class="cat-pill">${esc(p.category)}</span></td>
+        <td><span class="rating-pill">★ ${p.ratings.toFixed(1)}</span></td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Product</th><th>Category</th><th>Rating</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  } catch(e) {
+    document.getElementById('topTable').innerHTML = '<div class="loader-text">Failed to load</div>';
+  }
+}
+
+function catEmoji(cat=''){
+  const c=cat.toLowerCase();
+  if(c.includes('electron'))return'📱';
+  if(c.includes('cloth')||c.includes('fashion'))return'👗';
+  if(c.includes('book'))return'📚';
+  if(c.includes('sport'))return'⚽';
+  if(c.includes('beauty')||c.includes('health'))return'💄';
+  if(c.includes('home')||c.includes('kitchen'))return'🏠';
+  if(c.includes('toy'))return'🧸';
+  return'🛍';
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
+</body>
+</html>
