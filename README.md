@@ -54,14 +54,26 @@ It consists of:
 
 ## 📁 Project Structure
 
+```bash
+shopsmart/
+│── app.py                  # Main Flask application (routes + APIs)
+│── generate_data.py        # Script to generate/prepare dataset
+│── requirements.txt        # Python dependencies
+│── README.md               # Project documentation
+
+│── models/
+│   └── clean_data.csv      # Processed dataset used for recommendations
+
+│── templates/
+│   ├── index.html          # User interface (shopping page)
+│   └── main.html           # Admin dashboard
+
+│── static/
+│   ├── style.css           # Styling (UI theme)
+│   ├── script.js           # Frontend logic & API calls
+│   └── (assets if any)     # Images / additional files
 ```
-project-folder/
-│── index.html        # User interface (shopping page)
-│── main.html         # Admin dashboard
-│── style.css         # Styling (theme + layout)
-│── script.js         # Logic & recommendations
-│── assets/           # Images / dataset (if any)
-```
+
 
 ---
 
