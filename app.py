@@ -304,6 +304,8 @@ def api_top_rated():
 def api_price_dist():
     return jsonify(get_price_distribution())
 
-if __name__ == '__main__':
-    print("✅ ShopSmart running → http://127.0.0.1:5000")
-    app.run(debug=True, port=5000)
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0", 
+        port=int(os.environ.get("PORT", 5000))
+    )
